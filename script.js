@@ -1,38 +1,37 @@
 window.addEventListener("DOMContentLoaded", () => {
-  console.log("[Genesys Chat] Page DOM fully loaded");
+  console.log("[Genesys Chat] DOM loaded");
 
-  // Subscribe to Genesys message events
-  Genesys("subscribe", "MessagingService.messagesReceived", function (messages) {
-    console.log("[Genesys Chat] messagesReceived event triggered");
-    console.log("Raw event data:", messages);
+  Genesys("subscribe", "MessagingService.messagesReceived", function (event) {
+    console.log("[Genesys Chat] messagesReceived triggered");
+    console.log("Full event object:", event);
 
-    const msgs = Array.isArray(messages) ? messages : [messages];
-    console.log(`Normalized messages array. Count: ${msgs.length}`);
+    const rawMessages = event?.data?.messages || [];
+    const msgs = Array.isArray(rawMessages) ? rawMessages : [rawMessages];
+    console.log(`[Genesys Chat] Message count: ${msgs.length}`);
 
     msgs.forEach((message, index) => {
-      console.log(`Message #${index + 1} - Direction: ${message.direction}`);
+      console.log(`Message #${index + 1}:`, message);
 
-      if (message.direction === "Inbound") {
+      if (message.direction === "Outbound") {
+        console.log("[Genesys Chat] Inbound message detected — playing sound");
+
         const sound = document.getElementById("msgSound");
-
         if (sound) {
-          console.log("[Genesys Chat] Attempting to play sound...");
-          sound.play().then(() => {
-            console.log("[Genesys Chat] ✅ Sound played successfully");
-          }).catch((err) => {
-            console.warn("[Genesys Chat] ⚠️ Sound playback failed:", err);
-            console.warn(
-              "Note: This is usually due to lack of user interaction with the page. Try clicking anywhere first."
-            );
-          });
+          sound.play()
+            .then(() => {
+              console.log("[Genesys Chat] ✅ Sound played successfully");
+            })
+            .catch((err) => {
+              console.warn("[Genesys Chat] ⚠️ Sound playback failed:", err);
+            });
         } else {
           console.error("[Genesys Chat] ❌ Audio element not found in DOM");
         }
       } else {
-        console.log("[Genesys Chat] Message direction is not Inbound. Ignored.");
+        console.log(`[Genesys Chat] Skipping ${message.direction} message`);
       }
     });
   });
 
-  console.log("[Genesys Chat] Subscribed to messagesReceived event");
+  console.log("[Genesys Chat] Subscribed to messagesReceived");
 });
